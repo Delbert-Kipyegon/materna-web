@@ -4,5 +4,6 @@
   "/tracker/page": "app/tracker/page.js",
   "/tips/page": "app/tips/page.js",
   "/affirmations/page": "app/affirmations/page.js",
-  "/prime/page": "app/prime/page.js"
+  "/prime/page": "app/prime/page.js",
+  "/notes/page": "app/notes/page.js"
 }
