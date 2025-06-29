@@ -1,4 +1,4 @@
-// File: /home/project/app/tips/page.tsx
+// File: C:\Users\HP\Desktop\materna-web\app\tips\page.tsx
 import * as entry from '../../../../app/tips/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
