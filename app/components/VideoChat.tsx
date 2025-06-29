@@ -42,11 +42,6 @@ const VideoChat: React.FC<VideoChatProps> = ({ onClose, className = '' }) => {
                       TAVUS_API_KEY !== 'your_tavus_api_key_here' && 
                       REPLICA_ID !== 'your_replica_id_here'
 
-
-  console.log('TAVUS_API_KEY', TAVUS_API_KEY)
-  console.log('REPLICA_ID', REPLICA_ID)
-  console.log('hasValidKeys', hasValidKeys)
-
   const getApiKeyErrorMessage = () => {
     const missing = []
     if (!TAVUS_API_KEY || TAVUS_API_KEY === 'your_tavus_api_key_here') {

@@ -11,31 +11,61 @@ import Layout from './Layout'
 
 const TrackerPage: React.FC = () => {
   const { pregnancyData, setPregnancyData, isPrime } = useAppStore()
-  const [dueDate, setDueDate] = useState(
-    pregnancyData.dueDate ? pregnancyData.dueDate.toISOString().split('T')[0] : ''
+  const [conceptionDate, setConceptionDate] = useState(
+    pregnancyData.dueDate ? 
+      new Date(pregnancyData.dueDate.getTime() - (266 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0] : ''
   )
 
-  const calculateWeek = (dueDate: Date) => {
+  const calculateWeekFromConception = (conceptionDate: Date) => {
+    // Get today's date at midnight local time for consistent calculation
     const today = new Date()
-    const timeDiff = dueDate.getTime() - today.getTime()
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24))
-    const weeksRemaining = Math.ceil(daysDiff / 7)
-    const currentWeek = Math.max(0, Math.min(40, 40 - weeksRemaining + 1))
+    today.setHours(0, 0, 0, 0)
+    
+    // Ensure conception date is also at midnight for consistent comparison
+    const normalizedConceptionDate = new Date(conceptionDate)
+    normalizedConceptionDate.setHours(0, 0, 0, 0)
+    
+    // Validate that conception date is reasonable (not in future, not more than 42 weeks ago)
+    const maxPastDate = new Date(today.getTime() - (294 * 24 * 60 * 60 * 1000)) // 42 weeks ago
+    const tomorrow = new Date(today.getTime() + (24 * 60 * 60 * 1000))
+    
+    if (normalizedConceptionDate > tomorrow || normalizedConceptionDate < maxPastDate) {
+      return 0 // Invalid date range
+    }
+    
+    // Calculate weeks since conception
+    const timeSinceConception = today.getTime() - normalizedConceptionDate.getTime()
+    const daysSinceConception = timeSinceConception / (1000 * 60 * 60 * 24)
+    const weeksSinceConception = Math.round(daysSinceConception / 7)
+    
+    // Medical pregnancy weeks start from LMP, which is typically 2 weeks before conception
+    // So we add 2 weeks to weeks since conception
+    const pregnancyWeek = weeksSinceConception + 2
+    
+    // Ensure we're within reasonable pregnancy bounds (2-44 weeks)
+    const currentWeek = Math.max(0, Math.min(44, pregnancyWeek))
+    
     return currentWeek
   }
 
-  const handleDueDateChange = (date: string) => {
-    setDueDate(date)
+  const handleConceptionDateChange = (date: string) => {
+    setConceptionDate(date)
     if (date) {
-      const due = new Date(date)
-      const week = calculateWeek(due)
+      // Parse date in local timezone to avoid timezone shift issues
+      const [year, month, day] = date.split('-').map(Number)
+      const conception = new Date(year, month - 1, day) // month is 0-indexed
+      const week = calculateWeekFromConception(conception)
+      
+      // Calculate due date (266 days after conception, which is 280 days from LMP)
+      const dueDate = new Date(conception.getTime() + (266 * 24 * 60 * 60 * 1000))
+      
       const milestone = pregnancyMilestones[week as keyof typeof pregnancyMilestones]
       
       setPregnancyData({
-        dueDate: due,
+        dueDate: dueDate,
         currentWeek: week,
-        babySize: milestone?.babySize || '',
-        milestone: milestone?.milestone || ''
+        babySize: milestone?.babySize || 'grape',
+        milestone: milestone?.milestone || 'Your pregnancy journey begins!'
       })
     }
   }
@@ -55,28 +85,70 @@ const TrackerPage: React.FC = () => {
         </div>
 
         <div className="lg:grid lg:grid-cols-3 lg:gap-8 space-y-6 lg:space-y-0">
-          {/* Due Date Input */}
+          {/* Conception Date Input */}
           <div className="lg:col-span-1">
             <Card>
               <div className="p-6 lg:p-8 space-y-4">
                 <div className="flex items-center space-x-2 mb-4">
                   <Calendar className="w-6 h-6 text-primary-500" />
-                  <span className="font-semibold text-primary-900 lg:text-lg">Due Date</span>
+                  <span className="font-semibold text-primary-900 lg:text-lg">Conception Date</span>
                 </div>
                 <input
                   type="date"
-                  value={dueDate}
-                  onChange={(e) => handleDueDateChange(e.target.value)}
+                  value={conceptionDate}
+                  onChange={(e) => handleConceptionDateChange(e.target.value)}
                   className="w-full p-4 border border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent lg:text-lg"
+                  min={new Date(Date.now() - (294 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]} // Up to 42 weeks ago
+                  max={new Date().toISOString().split('T')[0]} // Today
                 />
+                
+                {conceptionDate && pregnancyData.currentWeek === 0 && (
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      Please enter when you conceived - this should be in the past, up to 10 months ago.
+                    </p>
+                  </div>
+                )}
                 
                 {pregnancyData.currentWeek > 0 && (
                   <div className="pt-4 border-t border-primary-100">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-primary-600 mb-1">
-                        {40 - pregnancyData.currentWeek}
+                    <div className="text-center space-y-3">
+                      <div className="text-sm text-primary-600">
+                        <strong>Due Date:</strong> {pregnancyData.dueDate?.toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
                       </div>
-                      <div className="text-sm text-primary-500">weeks remaining</div>
+                      {pregnancyData.currentWeek >= 40 ? (
+                        <div>
+                          <div className="text-2xl font-bold text-coral-600 mb-1">
+                            {pregnancyData.currentWeek > 40 ? `${pregnancyData.currentWeek - 40} week${pregnancyData.currentWeek - 40 !== 1 ? 's' : ''}` : 'Due'} 
+                          </div>
+                          <div className="text-sm text-coral-500">
+                            {pregnancyData.currentWeek > 40 ? 'past due date' : 'date arrived!'}
+                          </div>
+                        </div>
+                      ) : pregnancyData.currentWeek >= 37 ? (
+                        <div>
+                          <div className="text-2xl font-bold text-green-600 mb-1">
+                            Full Term
+                          </div>
+                          <div className="text-sm text-green-500">
+                            Baby can safely arrive anytime
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="text-3xl font-bold text-primary-600 mb-1">
+                            {Math.max(0, 40 - pregnancyData.currentWeek)}
+                          </div>
+                          <div className="text-sm text-primary-500">
+                            weeks until due date
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -144,7 +216,10 @@ const TrackerPage: React.FC = () => {
                           {week === 12 && 'End of First Trimester'}
                           {week === 24 && 'Halfway Point'}
                           {week === 36 && 'Full Term Soon'}
-                          {week === 40 && 'Due Date'}
+                          {week === 40 && (pregnancyData.dueDate ? 
+                            `Due Date: ${pregnancyData.dueDate.toLocaleDateString()}` : 
+                            'Due Date'
+                          )}
                         </div>
                         <div className="text-sm text-primary-600">
                           Week {week}

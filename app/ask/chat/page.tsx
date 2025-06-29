@@ -1,5 +1,5 @@
 import Layout from '../../components/Layout';
-import ChatInterface from '../../../components/ChatInterface';
+import ChatInterface from '../../components/ChatInterface';
 
 const ChatPage = () => {
   return (
@@ -8,7 +8,7 @@ const ChatPage = () => {
         <h1 className="text-3xl lg:text-5xl font-bold text-primary-900 mb-6 text-center">
           Chat with Materna AI
         </h1>
-        <ChatInterface />
+        <ChatInterface character="Maya" />
       </div>
     </Layout>
   );
