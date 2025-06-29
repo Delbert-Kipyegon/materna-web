@@ -1,9 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/ask/page": "app/ask/page.js",
-  "/tracker/page": "app/tracker/page.js",
-  "/tips/page": "app/tips/page.js",
-  "/affirmations/page": "app/affirmations/page.js",
-  "/prime/page": "app/prime/page.js",
-  "/notes/page": "app/notes/page.js"
-}
