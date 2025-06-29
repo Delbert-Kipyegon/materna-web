@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Volume2, Save, Heart, RefreshCw } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Volume2, Save, Heart, RefreshCw, Loader2, VolumeX, Pause, Play } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
-import { affirmations } from '../data/mockData'
+import { useAffirmations } from '../hooks/useAffirmations'
+import { useTTS } from '../hooks/useTTS'
 import Card from './Card'
 import Button from './Button'
 import PrimeBadge from './PrimeBadge'
@@ -11,26 +12,64 @@ import Layout from './Layout'
 
 const AffirmationsPage: React.FC = () => {
   const { addNote, isPrime } = useAppStore()
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const { 
+    currentAffirmation, 
+    loading, 
+    error, 
+    fetchRandomAffirmation, 
+    nextAffirmation 
+  } = useAffirmations()
+  const {
+    isPlaying,
+    isLoading: ttsLoading,
+    error: ttsError,
+    isConfigured: ttsConfigured,
+    usingFallback,
+    fallbackSupported,
+    speak,
+    stop,
+    pause,
+    resume,
+    checkConfiguration
+  } = useTTS()
   const [savedAffirmations, setSavedAffirmations] = useState<Set<string>>(new Set())
 
-  const currentAffirmation = affirmations[currentIndex]
-
   const handleSaveAffirmation = () => {
-    addNote({
-      content: currentAffirmation.text,
-      type: 'affirmation'
-    })
-    setSavedAffirmations(prev => new Set(prev).add(currentAffirmation.id))
+    if (currentAffirmation) {
+      addNote({
+        content: currentAffirmation.text,
+        type: 'affirmation'
+      })
+      const id = currentAffirmation.id || currentAffirmation._id
+      if (id) {
+        setSavedAffirmations(prev => new Set(prev).add(id))
+      }
+    }
   }
 
   const handleNewAffirmation = () => {
-    const nextIndex = (currentIndex + 1) % affirmations.length
-    setCurrentIndex(nextIndex)
+    fetchRandomAffirmation()
   }
 
-  const playVoice = () => {
-    alert('Voice affirmation would play via ElevenLabs API here')
+  // Check TTS configuration on mount
+  useEffect(() => {
+    checkConfiguration()
+  }, [checkConfiguration])
+
+  const handleVoicePlay = async () => {
+    if (!currentAffirmation) return
+
+    if (isPlaying) {
+      pause()
+    } else if (ttsConfigured || fallbackSupported) {
+      await speak(currentAffirmation.text, { voice_type: 'affirmations' })
+    } else {
+      alert('Text-to-speech is not supported in this browser.')
+    }
+  }
+
+  const handleVoiceStop = () => {
+    stop()
   }
 
   const getCategoryEmoji = (category: string) => {
@@ -98,35 +137,107 @@ const AffirmationsPage: React.FC = () => {
         {/* Current Affirmation */}
         <Card className="bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 border-pink-200">
           <div className="p-8 text-center space-y-6">
-            <div className="flex items-center justify-center space-x-2">
-              <span className="text-2xl">{getCategoryEmoji(currentAffirmation.category)}</span>
-              <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getCategoryColor(currentAffirmation.category)} text-white text-sm font-medium capitalize`}>
-                {currentAffirmation.category}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-500 mb-4" />
+                <p className="text-primary-600">Loading your affirmation...</p>
               </div>
-            </div>
-
-            <blockquote className="text-xl font-medium text-primary-800 italic leading-relaxed">
-              "{currentAffirmation.text}"
-            </blockquote>
-
-            <div className="pt-4">
-              <div className="flex justify-center space-x-3 mb-4">
-                <Button size="sm" variant="outline" onClick={playVoice} icon={Volume2}>
-                  Listen
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant={savedAffirmations.has(currentAffirmation.id) ? 'primary' : 'outline'} 
-                  onClick={handleSaveAffirmation} 
-                  icon={Save}
-                >
-                  {savedAffirmations.has(currentAffirmation.id) ? 'Saved' : 'Save'}
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleNewAffirmation} icon={RefreshCw}>
-                  New One
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <p className="text-red-600 mb-4">Error: {error}</p>
+                <Button size="sm" variant="outline" onClick={() => fetchRandomAffirmation()}>
+                  Try Again
                 </Button>
               </div>
-            </div>
+            ) : currentAffirmation ? (
+              <>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="text-2xl">{getCategoryEmoji(currentAffirmation.category)}</span>
+                  <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getCategoryColor(currentAffirmation.category)} text-white text-sm font-medium capitalize`}>
+                    {currentAffirmation.category}
+                  </div>
+                </div>
+
+                <blockquote className="text-xl font-medium text-primary-800 italic leading-relaxed">
+                  "{currentAffirmation.text}"
+                </blockquote>
+
+                <div className="pt-4">
+                  <div className="flex justify-center space-x-3 mb-4">
+                    <div className="flex space-x-1">
+                      <Button 
+                        size="sm" 
+                        variant={isPlaying ? "primary" : "outline"} 
+                        onClick={handleVoicePlay}
+                        disabled={ttsLoading || !currentAffirmation}
+                        icon={ttsLoading ? Loader2 : isPlaying ? Pause : (!ttsConfigured && !fallbackSupported) ? VolumeX : Volume2}
+                      >
+                        {ttsLoading ? 'Loading...' : isPlaying ? 'Pause' : (!ttsConfigured && !fallbackSupported) ? 'No Voice' : 'Listen'}
+                      </Button>
+                      {isPlaying && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={handleVoiceStop}
+                          icon={VolumeX}
+                        >
+                          Stop
+                        </Button>
+                      )}
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant={savedAffirmations.has(currentAffirmation.id || currentAffirmation._id || '') ? 'primary' : 'outline'} 
+                      onClick={handleSaveAffirmation} 
+                      icon={Save}
+                    >
+                      {savedAffirmations.has(currentAffirmation.id || currentAffirmation._id || '') ? 'Saved' : 'Save'}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={handleNewAffirmation} 
+                      icon={RefreshCw}
+                      disabled={loading}
+                    >
+                      New One
+                    </Button>
+                  </div>
+                  
+                  {/* TTS Error Display */}
+                  {ttsError && (
+                    <div className="mt-2 text-center">
+                      <p className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full">
+                        {ttsError}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* TTS Status */}
+                  {usingFallback && fallbackSupported && (
+                    <div className="mt-2 text-center">
+                      <p className="text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                        Using browser voice (Web Speech API)
+                      </p>
+                    </div>
+                  )}
+                  {ttsConfigured === false && !fallbackSupported && (
+                    <div className="mt-2 text-center">
+                      <p className="text-xs text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
+                        Voice not supported in this browser.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="py-8">
+                <p className="text-primary-600 mb-4">No affirmations available</p>
+                <Button size="sm" variant="outline" onClick={() => fetchRandomAffirmation()}>
+                  Load Affirmation
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
 

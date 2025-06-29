@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Volume2, Save, ThumbsUp, ThumbsDown, RefreshCw, Sparkles } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Volume2, Save, ThumbsUp, ThumbsDown, RefreshCw, Sparkles, Loader2, VolumeX, Pause } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '../store/useAppStore'
+import { useTTS } from '../hooks/useTTS'
 import { dailyTips } from '../data/mockData'
 import Card from './Card'
 import Button from './Button'
@@ -13,6 +14,18 @@ import Layout from './Layout'
 const TipsPage: React.FC = () => {
   const router = useRouter()
   const { addNote } = useAppStore()
+  const {
+    isPlaying,
+    isLoading: ttsLoading,
+    error: ttsError,
+    isConfigured: ttsConfigured,
+    usingFallback,
+    fallbackSupported,
+    speak,
+    stop,
+    pause,
+    checkConfiguration
+  } = useTTS()
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const [feedback, setFeedback] = useState<{ [key: string]: 'helpful' | 'not-helpful' }>({})
 
@@ -34,8 +47,27 @@ const TipsPage: React.FC = () => {
     setCurrentTipIndex(nextIndex)
   }
 
-  const playVoice = () => {
-    alert('Voice playback would integrate with ElevenLabs API here')
+  // Check TTS configuration on mount
+  useEffect(() => {
+    checkConfiguration()
+  }, [checkConfiguration])
+
+  const handleVoicePlay = async () => {
+    if (!currentTip) return
+
+    const tipText = `${currentTip.title}. ${currentTip.content}`
+
+    if (isPlaying) {
+      pause()
+    } else if (ttsConfigured || fallbackSupported) {
+      await speak(tipText, { voice_type: 'tips' })
+    } else {
+      alert('Text-to-speech is not supported in this browser.')
+    }
+  }
+
+  const handleVoiceStop = () => {
+    stop()
   }
 
   const getCategoryColor = (category: string) => {
@@ -79,9 +111,27 @@ const TipsPage: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-2 pt-4 border-t border-primary-100">
-              <Button size="sm" variant="outline" onClick={playVoice} icon={Volume2}>
-                Play Voice
-              </Button>
+              <div className="flex space-x-1">
+                <Button 
+                  size="sm" 
+                  variant={isPlaying ? "primary" : "outline"} 
+                  onClick={handleVoicePlay}
+                  disabled={ttsLoading || !currentTip}
+                  icon={ttsLoading ? Loader2 : isPlaying ? Pause : (!ttsConfigured && !fallbackSupported) ? VolumeX : Volume2}
+                >
+                  {ttsLoading ? 'Loading...' : isPlaying ? 'Pause' : (!ttsConfigured && !fallbackSupported) ? 'No Voice' : 'Play Voice'}
+                </Button>
+                {isPlaying && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={handleVoiceStop}
+                    icon={VolumeX}
+                  >
+                    Stop
+                  </Button>
+                )}
+              </div>
               <Button size="sm" variant="outline" onClick={handleSaveTip} icon={Save}>
                 Save Tip
               </Button>
@@ -89,6 +139,31 @@ const TipsPage: React.FC = () => {
                 New Tip
               </Button>
             </div>
+            
+            {/* TTS Error Display */}
+            {ttsError && (
+              <div className="mt-2">
+                <p className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full text-center">
+                  {ttsError}
+                </p>
+              </div>
+            )}
+            
+            {/* TTS Status */}
+            {usingFallback && fallbackSupported && (
+              <div className="mt-2">
+                <p className="text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-center">
+                  Using browser voice (Web Speech API)
+                </p>
+              </div>
+            )}
+            {ttsConfigured === false && !fallbackSupported && (
+              <div className="mt-2">
+                <p className="text-xs text-orange-600 bg-orange-50 px-3 py-1 rounded-full text-center">
+                  Voice not supported in this browser.
+                </p>
+              </div>
+            )}
 
             {/* Feedback */}
             <div className="pt-4 border-t border-primary-100">

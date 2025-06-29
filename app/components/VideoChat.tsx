@@ -31,16 +31,21 @@ const VideoChat: React.FC<VideoChatProps> = ({ onClose, className = '' }) => {
   const streamRef = useRef<MediaStream | null>(null)
   const dailyCallRef = useRef<any>(null)
   const [dailyLoaded, setDailyLoaded] = useState(false)
-  const [sdkLoadingAttempts, setSdkLoadingAttempts] = useState(0)
+  const sdkLoadingAttemptsRef = useRef(0)
 
   // Tavus API configuration
-  const TAVUS_API_KEY = process.env.TAVUS_API_KEY || ''
-  const REPLICA_ID = process.env.TAVUS_REPLICA_ID || ''
+  const TAVUS_API_KEY = process.env.TAVUS_API_KEY || '90b3798b86d1479fb4aaf54d0579ebd8'
+  const REPLICA_ID = process.env.TAVUS_REPLICA_ID || 'r4317e64d25a'
   
   const hasValidKeys = TAVUS_API_KEY && 
                       REPLICA_ID && 
                       TAVUS_API_KEY !== 'your_tavus_api_key_here' && 
                       REPLICA_ID !== 'your_replica_id_here'
+
+
+  console.log('TAVUS_API_KEY', TAVUS_API_KEY)
+  console.log('REPLICA_ID', REPLICA_ID)
+  console.log('hasValidKeys', hasValidKeys)
 
   const getApiKeyErrorMessage = () => {
     const missing = []
@@ -124,7 +129,7 @@ const VideoChat: React.FC<VideoChatProps> = ({ onClose, className = '' }) => {
     
     const initializeSDK = async () => {
       try {
-        setSdkLoadingAttempts(prev => prev + 1)
+        sdkLoadingAttemptsRef.current += 1
         await loadDailySDK()
         
         if (mounted) {
@@ -135,7 +140,7 @@ const VideoChat: React.FC<VideoChatProps> = ({ onClose, className = '' }) => {
         console.error('Failed to load Daily.co SDK:', error)
         
         if (mounted) {
-          if (sdkLoadingAttempts < 3) {
+          if (sdkLoadingAttemptsRef.current < 3) {
             // Retry loading after a delay
             setTimeout(() => {
               if (mounted) {
@@ -149,7 +154,10 @@ const VideoChat: React.FC<VideoChatProps> = ({ onClose, className = '' }) => {
       }
     }
 
-    initializeSDK()
+    // Only initialize if not already loaded and haven't exceeded max attempts
+    if (!dailyLoaded && sdkLoadingAttemptsRef.current === 0) {
+      initializeSDK()
+    }
 
     return () => {
       mounted = false
@@ -168,7 +176,7 @@ const VideoChat: React.FC<VideoChatProps> = ({ onClose, className = '' }) => {
         dailyCallRef.current = null
       }
     }
-  }, [sdkLoadingAttempts])
+  }, [dailyLoaded])
 
   // Step 1: Create or get a Persona
   const createTavusPersona = async () => {

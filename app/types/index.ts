@@ -22,9 +22,20 @@ export interface DailyTip {
 }
 
 export interface Affirmation {
-  id: string;
+  _id?: string;
+  id?: string;
   text: string;
   category: 'confidence' | 'strength' | 'love' | 'peace';
+  isActive?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface SpeechSettings {
+  stability: number;
+  similarityBoost: number;
+  style: number;
+  useSpeakerBoost: boolean;
 }
 
 export type Language = 'en' | 'sw';
