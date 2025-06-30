@@ -154,7 +154,7 @@ const ChatPage = () => {
         },
         body: JSON.stringify({
           prompt: inputMessage,
-          model: 'gpt-4', // You can change this to 'gpt-3.5-turbo' for faster responses
+          model: 'gpt-4', 
           characterName: character.name,
         }),
       });
@@ -173,30 +173,23 @@ const ChatPage = () => {
       let timestamp = new Date().toISOString();
 
       if (data.success && data.reply) {
-        // Expected format: {success: true, reply: "response"}
         assistantResponse = data.reply;
         timestamp = data.timestamp || timestamp;
       } else if (data.reply) {
-        // Format without success flag: {reply: "response"}
         assistantResponse = data.reply;
         timestamp = data.timestamp || timestamp;
       } else if (data.message) {
-        // Alternative format: {message: "response"}
         assistantResponse = data.message;
         timestamp = data.timestamp || timestamp;
       } else if (data.response) {
-        // Another alternative format: {response: "response"}
         assistantResponse = data.response;
         timestamp = data.timestamp || timestamp;
       } else if (data.content) {
-        // Another alternative format: {content: "response"}
         assistantResponse = data.content;
         timestamp = data.timestamp || timestamp;
       } else if (typeof data === 'string') {
-        // Plain string response
         assistantResponse = data;
       } else if (data.choices && data.choices[0] && data.choices[0].message) {
-        // OpenAI API format: {choices: [{message: {content: "response"}}]}
         assistantResponse = data.choices[0].message.content;
       } else {
         console.error('Unexpected response format:', data);
@@ -259,7 +252,6 @@ const ChatPage = () => {
         .find(msg => msg.role === 'user');
       
       if (lastUserMessage) {
-        // Remove the last assistant message (which was likely an error)
         setMessages(prev => {
           const lastAssistantIndex = prev.map(msg => msg.role).lastIndexOf('assistant');
           if (lastAssistantIndex > -1) {
@@ -268,13 +260,13 @@ const ChatPage = () => {
           return prev;
         });
         
-        // Retry sending the last user message
+
         sendMessage(lastUserMessage.content);
       }
     }
   }, [messages, sendMessage]);
 
-  // Enhanced character object with additional properties for ChatInterface
+ 
   const enhancedCharacter = {
     ...character,
     messages,

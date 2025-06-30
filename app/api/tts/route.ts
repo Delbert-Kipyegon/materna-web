@@ -217,30 +217,30 @@ export async function GET(req: NextRequest) {
 function cleanTextForTTS(text: string): string {
   return text
     // Remove markdown formatting
-    .replace(/\*\*(.*?)\*\*/g, '$1') // Bold
-    .replace(/\*(.*?)\*/g, '$1') // Italic
-    .replace(/`(.*?)`/g, '$1') // Inline code
-    .replace(/```[\s\S]*?```/g, '[Code block]') // Code blocks
-    .replace(/#{1,6}\s/g, '') // Headers
-    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Links
+    .replace(/\*\*(.*?)\*\*/g, '$1') 
+    .replace(/\*(.*?)\*/g, '$1') 
+    .replace(/`(.*?)`/g, '$1') 
+    .replace(/```[\s\S]*?```/g, '[Code block]') 
+    .replace(/#{1,6}\s/g, '') 
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
     
     // Clean up excessive punctuation and formatting
-    .replace(/\n{3,}/g, '\n\n') // Multiple newlines
-    .replace(/\.{3,}/g, '...') // Multiple dots
-    .replace(/!{2,}/g, '!') // Multiple exclamations
-    .replace(/\?{2,}/g, '?') // Multiple questions
+    .replace(/\n{3,}/g, '\n\n') 
+    .replace(/\.{3,}/g, '...') 
+    .replace(/!{2,}/g, '!') 
+    .replace(/\?{2,}/g, '?') 
     
-    // Replace common symbols that don't read well
+
     .replace(/&/g, 'and')
     .replace(/@/g, 'at')
     .replace(/#/g, 'number')
     .replace(/\$/g, 'dollar')
     .replace(/%/g, 'percent')
     
-    // Remove or replace problematic characters
-    .replace(/[^\w\s.,!?;:'"()\-]/g, '') // Remove special characters
+
+    .replace(/[^\w\s.,!?;:'"()\-]/g, '') 
     
-    // Clean up whitespace
+
     .replace(/\s+/g, ' ')
     .trim();
 }
