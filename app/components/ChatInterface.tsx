@@ -161,11 +161,11 @@ const ChatInterface = ({ character }: { character: Character }) => {
           <div className="flex items-center space-x-4">
             <label className="text-sm font-medium text-gray-700">Voice:</label>
             <select
-              value={character.selectedVoice || 'JBFqnCBsd6RMkjVDRZzb'}
+              value={character.selectedVoice || '54aMY52sJqjoIoZwarYW'}
               onChange={(e) => character.setSelectedVoice?.(e.target.value)}
               className="px-3 py-1 border border-gray-300 rounded-md text-sm"
             >
-              <option value="JBFqnCBsd6RMkjVDRZzb">Default Voice</option>
+              <option value="54aMY52sJqjoIoZwarYW">Default Voice</option>
               {character.voices.map(voice => (
                 <option key={voice.voice_id} value={voice.voice_id}>
                   {voice.name} ({voice.category})
