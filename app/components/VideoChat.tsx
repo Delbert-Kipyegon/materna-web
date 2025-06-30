@@ -34,8 +34,8 @@ const VideoChat: React.FC<VideoChatProps> = ({ onClose, className = '' }) => {
   const sdkLoadingAttemptsRef = useRef(0)
 
   // Tavus API configuration
-  const TAVUS_API_KEY = process.env.TAVUS_API_KEY || '90b3798b86d1479fb4aaf54d0579ebd8'
-  const REPLICA_ID = process.env.TAVUS_REPLICA_ID || 'r4317e64d25a'
+  const TAVUS_API_KEY = process.env.NEXT_PUBLIC_TAVUS_API_KEY || ''
+  const REPLICA_ID = process.env.NEXT_PUBLIC_TAVUS_REPLICA_ID || ''
   
   const hasValidKeys = TAVUS_API_KEY && 
                       REPLICA_ID && 

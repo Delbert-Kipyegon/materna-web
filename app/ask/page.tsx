@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import TavusVideo from '../../components/TavusVideo'; // Corrected path for TavusVideo
-import ChatInterface from '../../components/ChatInterface'; // Corrected path for ChatInterface
 import Layout from '../components/Layout'; // Corrected path for Layout
 import { useRouter } from 'next/navigation';
 import { MessageCircle, Video } from 'lucide-react';

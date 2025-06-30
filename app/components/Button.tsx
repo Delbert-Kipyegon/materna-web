@@ -6,7 +6,7 @@ interface ButtonProps {
   onClick?: () => void
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
-  icon?: LucideIcon
+  icon?: typeof LucideIcon
   disabled?: boolean
   className?: string
   type?: 'button' | 'submit'

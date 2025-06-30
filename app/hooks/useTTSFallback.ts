@@ -31,14 +31,18 @@ export const useTTSFallback = () => {
       return voices.find(voice => 
         voice.name.toLowerCase().includes('female') ||
         voice.name.toLowerCase().includes('woman') ||
-        voice.gender === 'female'
+        voice.name.toLowerCase().includes('samantha') ||
+        voice.name.toLowerCase().includes('kate') ||
+        voice.name.toLowerCase().includes('emily')
       ) || voices.find(voice => voice.default) || voices[0]
     } else {
       // Prefer male voices for tips, or default
       return voices.find(voice => 
         voice.name.toLowerCase().includes('male') ||
         voice.name.toLowerCase().includes('man') ||
-        voice.gender === 'male'
+        voice.name.toLowerCase().includes('david') ||
+        voice.name.toLowerCase().includes('mark') ||
+        voice.name.toLowerCase().includes('daniel')
       ) || voices.find(voice => voice.default) || voices[0]
     }
   }, [state.isSupported])

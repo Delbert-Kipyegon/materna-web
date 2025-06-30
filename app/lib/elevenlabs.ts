@@ -18,8 +18,8 @@ async function getElevenLabsApi() {
 
   if (!elevenLabsApi) {
     try {
-      const { ElevenLabs } = await import('@elevenlabs/elevenlabs-js')
-      elevenLabsApi = new ElevenLabs({
+      const { ElevenLabsClient } = await import('@elevenlabs/elevenlabs-js')
+      elevenLabsApi = new ElevenLabsClient({
         apiKey: ELEVENLABS_API_KEY
       })
     } catch (error) {
@@ -56,22 +56,32 @@ export async function generateSpeech(
     const voiceId = VOICES[contentType]
     const settings = speechSettings[contentType]
 
-    const audio = await api.generate({
-      voice: voiceId,
+    const audio = await api.textToSpeech.convert(voiceId, {
       text,
-      model_id: "eleven_multilingual_v2",
-      voice_settings: {
+      modelId: "eleven_multilingual_v2",
+      outputFormat: 'mp3_44100_128',
+      voiceSettings: {
         stability: settings.stability,
-        similarity_boost: settings.similarityBoost,
+        similarityBoost: settings.similarityBoost,
         style: settings.style,
-        use_speaker_boost: settings.useSpeakerBoost
+        speakerBoost: settings.useSpeakerBoost
       }
     })
 
     // Convert the audio response to ArrayBuffer
     const chunks: Uint8Array[] = []
-    for await (const chunk of audio) {
-      chunks.push(chunk)
+    const reader = audio.getReader()
+    
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (value) {
+          chunks.push(value)
+        }
+      }
+    } finally {
+      reader.releaseLock()
     }
     
     const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
@@ -90,25 +100,16 @@ export async function generateSpeech(
 }
 
 export async function getAvailableVoices() {
-  const api = await getElevenLabsApi()
-  
-  if (!api) {
-    console.error('ElevenLabs API not available')
-    return null
-  }
-
   try {
-    let voices
+    const api = await getElevenLabsApi()
     
-    if (api.voices && typeof api.voices.getAll === 'function') {
-      voices = await api.voices.getAll()
-      return voices.voices || voices
-    } else if (typeof api.getVoices === 'function') {
-      voices = await api.getVoices()
-      return voices.voices || voices
-    } else {
-      throw new Error('Unable to find compatible voices method in ElevenLabs API')
+    if (!api) {
+      console.error('ElevenLabs API not available')
+      return null
     }
+
+    const voices = await api.voices.getAll()
+    return voices.voices || voices
   } catch (error) {
     console.error('Error fetching voices:', error)
     return null

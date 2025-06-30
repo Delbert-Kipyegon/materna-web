@@ -8,7 +8,7 @@ const elevenlabs = new ElevenLabsClient({
 export async function POST(req: NextRequest) {
   console.log('=== TTS API Route Called ===');
   console.log('Timestamp:', new Date().toISOString());
-  console.log('ElevenLabs API Key exists:', !!process.env.ELEVENLABS_API_KEY);
+  // console.log('ElevenLabs API Key exists:', !!process.env.ELEVENLABS_API_KEY);
 
   try {
     const body = await req.json();
@@ -57,29 +57,30 @@ export async function POST(req: NextRequest) {
 
     // Handle ElevenLabs API errors
     if (error && typeof error === 'object' && 'message' in error) {
-      console.error('ElevenLabs API Error:', error.message);
+      const errorMessage = typeof error.message === 'string' ? error.message : String(error.message);
+      console.error('ElevenLabs API Error:', errorMessage);
       
       // Handle specific ElevenLabs errors
-      if (error.message.includes('quota')) {
+      if (errorMessage.includes('quota')) {
         return NextResponse.json({
           error: 'Voice generation quota exceeded. Please try again later.'
         }, { status: 429 });
       }
       
-      if (error.message.includes('voice_id')) {
+      if (errorMessage.includes('voiceId')) {
         return NextResponse.json({
           error: 'Invalid voice ID provided'
         }, { status: 400 });
       }
       
-      if (error.message.includes('rate_limit') || error.message.includes('too many requests')) {
+      if (errorMessage.includes('rateLimit') || errorMessage.includes('too many requests')) {
         return NextResponse.json({
           error: 'Rate limit exceeded. Please wait a moment before trying again.'
         }, { status: 429 });
       }
       
       return NextResponse.json({
-        error: `ElevenLabs API Error: ${error.message}`
+        error: `ElevenLabs API Error: ${errorMessage}`
       }, { status: 500 });
     }
 
@@ -183,11 +184,11 @@ export async function GET(req: NextRequest) {
       
       return NextResponse.json({
         voices: voices.voices.map(voice => ({
-          voice_id: voice.voice_id,
+          voice_id: voice.voiceId,
           name: voice.name,
           category: voice.category,
           description: voice.description,
-          preview_url: voice.preview_url
+          preview_url: voice.previewUrl
         }))
       });
     } catch (error) {
