@@ -1,15 +1,21 @@
+"use client";
+
+import React from 'react';
 import Layout from '../../components/Layout';
 import ChatInterface from '../../components/ChatInterface';
 
 const ChatPage = () => {
+  const character = {
+    id: 'maya',
+    name: 'Maya',
+    avatar: '',
+    specialty: 'Materna AI',
+    description: 'Materna AI is here to assist you.',
+  };
+
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto py-8 lg:py-16">
-        <h1 className="text-3xl lg:text-5xl font-bold text-primary-900 mb-6 text-center">
-          Chat with Materna AI
-        </h1>
-        <ChatInterface character="Maya" />
-      </div>
+      <ChatInterface character={character} />
     </Layout>
   );
 };
