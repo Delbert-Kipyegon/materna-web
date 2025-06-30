@@ -9,9 +9,6 @@ const nextConfig = {
   images: {
     domains: ['images.pexels.com'],
   },
-  experimental: {
-    optimizePackageImports: ['lucide-react'],
-  },
 }
 
 module.exports = nextConfig
