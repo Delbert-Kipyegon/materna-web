@@ -99,11 +99,11 @@ async function generateSpeech(
   voiceSettings: any
 ) {
   console.log('Making ElevenLabs TTS API call...');
-  console.log('Voice ID:', voiceId || 'JBFqnCBsd6RMkjVDRZzb');
+  console.log('Voice ID:', voiceId || '54aMY52sJqjoIoZwarYW');
   console.log('Text length:', text.length);
 
   const audio = await elevenlabs.textToSpeech.convert(
-    voiceId || 'JBFqnCBsd6RMkjVDRZzb', // Default voice ID
+    voiceId || '54aMY52sJqjoIoZwarYW', // Default voice ID
     {
       text: text,
       modelId: 'eleven_multilingual_v2',
