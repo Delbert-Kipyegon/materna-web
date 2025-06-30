@@ -68,39 +68,35 @@ export async function POST(req: NextRequest) {
     // Handle ElevenLabs API errors using type guard
     if (isErrorWithMessage(error)) {
       console.error('ElevenLabs API Error:', error.message);
-    // Handle ElevenLabs API errors
-    if (error && typeof error === 'object' && 'message' in error) {
-      const errorMessage = typeof error.message === 'string' ? error.message : String(error.message);
-      console.error('ElevenLabs API Error:', errorMessage);
       
       // Handle specific ElevenLabs errors
-      if (errorMessage.includes('quota')) {
+      if (error.message.includes('quota')) {
         return NextResponse.json({
           error: 'Voice generation quota exceeded. Please try again later.'
         }, { status: 429 });
       }
       
-      if (errorMessage.includes('voiceId')) {
+      if (error.message.includes('voiceId')) {
         return NextResponse.json({
           error: 'Invalid voice ID provided'
         }, { status: 400 });
       }
       
-      if (errorMessage.includes('rateLimit') || errorMessage.includes('too many requests')) {
+      if (error.message.includes('rateLimit') || error.message.includes('too many requests')) {
         return NextResponse.json({
           error: 'Rate limit exceeded. Please wait a moment before trying again.'
         }, { status: 429 });
       }
       
       return NextResponse.json({
-        error: `ElevenLabs API Error: ${errorMessage}`
+        error: `ElevenLabs API Error: ${error.message}`
       }, { status: 500 });
     }
 
     // Generic error handler
     return NextResponse.json({
       error: 'Failed to generate speech',
-      details: error instanceof Error ? error.message : String(error)
+      details: String(error)
     }, { status: 500 });
   }
 }
