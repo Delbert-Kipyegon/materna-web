@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Send, Paperclip, RotateCcw, Trash2 } from 'lucide-react';
+import { User, Send, Paperclip, RotateCcw, Trash2, Volume2, VolumeX, Settings } from 'lucide-react';
 
-interface ChatMessage {
-  sender: string;
-  text: string;
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
   timestamp: string;
+  id?: string;
 }
 
 interface Character {
@@ -15,118 +16,55 @@ interface Character {
   avatar: string;
   specialty: string;
   description: string;
+  messages: Message[];
+  isLoading: boolean;
+  error: string | null;
+  onSendMessage: (message: string) => void;
+  onClearMessages: () => void;
+  onRetryMessage: () => void;
+  // TTS-related props
+  audioEnabled?: boolean;
+  setAudioEnabled?: (enabled: boolean) => void;
+  voices?: any[];
+  selectedVoice?: string;
+  setSelectedVoice?: (voiceId: string) => void;
+  playingMessageId?: string | null;
+  ttsLoading?: Set<string>;
+  onToggleAudio?: (messageId: string, text: string) => void;
 }
 
 const ChatInterface = ({ character }: { character: Character }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(scrollToBottom, [character.messages]);
 
   const sendMessage = async () => {
     console.log('=== ChatInterface sendMessage called ===');
     console.log('Input:', input);
-    console.log('Is loading:', isLoading);
+    console.log('Is loading:', character.isLoading);
     
-    if (!input.trim() || isLoading) {
+    if (!input.trim() || character.isLoading) {
       console.log('Early return - empty input or loading');
       return;
     }
 
-    const userMessage: ChatMessage = { 
-      sender: 'user', 
-      text: input,
-      timestamp: new Date().toISOString()
-    };
-    setMessages((prev) => [...prev, userMessage]);
+    character.onSendMessage(input);
     setInput('');
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      console.log('Making API call...');
-      // Call the OpenAI API via your backend
-      const response = await fetch('/api/llm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          prompt: input, 
-          model: 'gpt-4',
-          characterName: character.name
-        }),
-      });
-
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('API response data:', data);
-
-      // FIXED: Check for data.reply directly (removed success check)
-      if (data.reply) {
-        const botMessage: ChatMessage = { 
-          sender: 'bot', 
-          text: data.reply,
-          timestamp: new Date().toISOString()
-        };
-        setMessages((prev) => [...prev, botMessage]);
-        console.log('Bot message added successfully');
-      } else {
-        console.error('No reply in response:', data);
-        throw new Error(data.error || 'No reply received from API');
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setError(errorMessage);
-      
-      const botErrorMessage: ChatMessage = { 
-        sender: 'bot', 
-        text: 'I apologize, but I encountered an error while processing your message. Please try again in a moment.',
-        timestamp: new Date().toISOString()
-      };
-      setMessages((prev) => [...prev, botErrorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const retryLastMessage = () => {
-    if (messages.length >= 2) {
-      const lastUserMessage = messages
-        .slice()
-        .reverse()
-        .find(msg => msg.sender === 'user');
-      
-      if (lastUserMessage) {
-        // Remove the last bot message (error message)
-        setMessages(prev => {
-          const lastBotIndex = prev.map(msg => msg.sender).lastIndexOf('bot');
-          if (lastBotIndex > -1) {
-            return prev.slice(0, lastBotIndex);
-          }
-          return prev;
-        });
-        
-        setInput(lastUserMessage.text);
-        setError(null);
-      }
-    }
+    character.onRetryMessage();
+    setInput('');
   };
 
   const clearChat = () => {
-    setMessages([]);
-    setError(null);
+    character.onClearMessages();
     setInput('');
   };
 
@@ -143,6 +81,14 @@ const ChatInterface = ({ character }: { character: Character }) => {
       minute: '2-digit' 
     });
   };
+
+  // Convert messages to the format expected by the original component
+  const convertedMessages = character.messages.map(msg => ({
+    sender: msg.role === 'user' ? 'user' : 'bot',
+    text: msg.content,
+    timestamp: msg.timestamp,
+    id: msg.id
+  }));
 
   return (
     <div className="flex flex-col h-[80vh] max-w-full mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
@@ -164,7 +110,31 @@ const ChatInterface = ({ character }: { character: Character }) => {
         
         {/* Action buttons */}
         <div className="flex items-center space-x-2">
-          {error && (
+          {/* TTS Controls */}
+          {character.audioEnabled !== undefined && (
+            <>
+              <button
+                onClick={() => character.setAudioEnabled?.(!character.audioEnabled)}
+                className={`p-2 rounded-lg transition-colors ${
+                  character.audioEnabled 
+                    ? 'text-white hover:bg-white hover:bg-opacity-20' 
+                    : 'text-white opacity-50 hover:bg-white hover:bg-opacity-20'
+                }`}
+                title={character.audioEnabled ? 'Disable auto-speech' : 'Enable auto-speech'}
+              >
+                {character.audioEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                title="Voice settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </>
+          )}
+          
+          {character.error && (
             <button 
               onClick={retryLastMessage}
               className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
@@ -173,7 +143,7 @@ const ChatInterface = ({ character }: { character: Character }) => {
               <RotateCcw className="w-5 h-5" />
             </button>
           )}
-          {messages.length > 0 && (
+          {convertedMessages.length > 0 && (
             <button 
               onClick={clearChat}
               className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
@@ -185,9 +155,30 @@ const ChatInterface = ({ character }: { character: Character }) => {
         </div>
       </div>
 
+      {/* Voice Settings Panel */}
+      {showSettings && character.voices && (
+        <div className="bg-white border-b px-4 py-3">
+          <div className="flex items-center space-x-4">
+            <label className="text-sm font-medium text-gray-700">Voice:</label>
+            <select
+              value={character.selectedVoice || 'JBFqnCBsd6RMkjVDRZzb'}
+              onChange={(e) => character.setSelectedVoice?.(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+            >
+              <option value="JBFqnCBsd6RMkjVDRZzb">Default Voice</option>
+              {character.voices.map(voice => (
+                <option key={voice.voice_id} value={voice.voice_id}>
+                  {voice.name} ({voice.category})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-        {messages.length === 0 && (
+        {convertedMessages.length === 0 && (
           <div className="text-center py-8">
             <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 max-w-md mx-auto">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -201,7 +192,7 @@ const ChatInterface = ({ character }: { character: Character }) => {
           </div>
         )}
 
-        {messages.map((msg, index) => (
+        {convertedMessages.map((msg, index) => (
           <div key={index} className={`mb-4 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`${
               msg.sender === 'user' 
@@ -212,11 +203,30 @@ const ChatInterface = ({ character }: { character: Character }) => {
                 <strong className="text-sm">
                   {msg.sender === 'user' ? 'You' : character.name}
                 </strong>
-                <span className={`text-xs ${
-                  msg.sender === 'user' ? 'text-blue-100' : 'text-gray-400'
-                }`}>
-                  {formatTime(msg.timestamp)}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-xs ${
+                    msg.sender === 'user' ? 'text-blue-100' : 'text-gray-400'
+                  }`}>
+                    {formatTime(msg.timestamp)}
+                  </span>
+                  {/* TTS Button for bot messages */}
+                  {msg.sender === 'bot' && character.onToggleAudio && msg.id && (
+                    <button
+                      onClick={() => character.onToggleAudio?.(msg.id!, msg.text)}
+                      disabled={character.ttsLoading?.has(msg.id) || false}
+                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Play/Stop audio"
+                    >
+                      {character.ttsLoading?.has(msg.id) ? (
+                        <div className="animate-spin w-3 h-3 border border-gray-300 border-t-gray-600 rounded-full"></div>
+                      ) : character.playingMessageId === msg.id ? (
+                        <VolumeX className="w-3 h-3" />
+                      ) : (
+                        <Volume2 className="w-3 h-3" />
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="whitespace-pre-wrap text-sm">{msg.text}</div>
             </div>
@@ -224,7 +234,7 @@ const ChatInterface = ({ character }: { character: Character }) => {
         ))}
 
         {/* Loading indicator */}
-        {isLoading && (
+        {character.isLoading && (
           <div className="mb-4 flex justify-start">
             <div className="bg-white text-gray-800 border border-gray-200 p-3 rounded-lg max-w-xs shadow-sm">
               <div className="flex items-center space-x-2">
@@ -240,11 +250,11 @@ const ChatInterface = ({ character }: { character: Character }) => {
         )}
 
         {/* Error indicator */}
-        {error && (
+        {character.error && (
           <div className="mb-4 flex justify-center">
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-w-md">
               <p className="text-red-700 text-sm mb-2">
-                Connection error: {error}
+                Connection error: {character.error}
               </p>
               <button
                 onClick={retryLastMessage}
@@ -264,7 +274,7 @@ const ChatInterface = ({ character }: { character: Character }) => {
         <button 
           className="p-2 text-gray-500 hover:text-gray-700 transition-colors" 
           aria-label="Attach a file"
-          disabled={isLoading}
+          disabled={character.isLoading}
         >
           <Paperclip className="w-5 h-5" />
         </button>
@@ -273,17 +283,17 @@ const ChatInterface = ({ character }: { character: Character }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleInputKeyDown}
-          placeholder={isLoading ? "Waiting for response..." : `Ask ${character.name} about maternal health...`}
+          placeholder={character.isLoading ? "Waiting for response..." : `Ask ${character.name} about maternal health...`}
           className="flex-1 p-2 mx-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-          disabled={isLoading}
+          disabled={character.isLoading}
         />
         <button 
           onClick={sendMessage} 
-          disabled={!input.trim() || isLoading}
+          disabled={!input.trim() || character.isLoading}
           className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[40px]" 
           aria-label="Send message"
         >
-          {isLoading ? (
+          {character.isLoading ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
           ) : (
             <Send className="w-5 h-5" />
