@@ -5,6 +5,16 @@ const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
+// Type guard to check if error has a message property
+function isErrorWithMessage(error: unknown): error is { message: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message: unknown }).message === 'string'
+  );
+}
+
 export async function POST(req: NextRequest) {
   console.log('=== TTS API Route Called ===');
   console.log('Timestamp:', new Date().toISOString());
@@ -55,8 +65,8 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Handle ElevenLabs API errors
-    if (error && typeof error === 'object' && 'message' in error) {
+    // Handle ElevenLabs API errors using type guard
+    if (isErrorWithMessage(error)) {
       console.error('ElevenLabs API Error:', error.message);
       
       // Handle specific ElevenLabs errors
