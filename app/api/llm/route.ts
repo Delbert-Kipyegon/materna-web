@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: NextRequest) {
   console.log('=== API Route Called ===');
   console.log('Timestamp:', new Date().toISOString());
@@ -12,6 +8,17 @@ export async function POST(req: NextRequest) {
   console.log('API Key prefix:', process.env.OPENAI_API_KEY?.substring(0, 12) + '...');
 
   try {
+    // Check for API key before instantiating OpenAI client
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('Configuration error: OpenAI API key is not set');
+      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
+    }
+
+    // Instantiate OpenAI client only when needed
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
     // Parse and log request body
     const body = await req.json();
     console.log('Request body received:', {
@@ -31,11 +38,6 @@ export async function POST(req: NextRequest) {
     if (!characterName || typeof characterName !== 'string') {
       console.error('Validation failed: Invalid or missing characterName');
       return NextResponse.json({ error: 'Invalid or missing characterName' }, { status: 400 });
-    }
-
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('Configuration error: OpenAI API key is not set');
-      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
     }
 
     console.log('Making OpenAI API call...');
