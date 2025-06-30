@@ -21,7 +21,7 @@ const ChatPage = () => {
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
   const [voices, setVoices] = useState<any[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState('JBFqnCBsd6RMkjVDRZzb');
+  const [selectedVoice, setSelectedVoice] = useState('54aMY52sJqjoIoZwarYW');
   const [ttsLoading, setTtsLoading] = useState(new Set<string>());
   
   const audioRef = useRef<HTMLAudioElement | null>(null);

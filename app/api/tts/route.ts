@@ -5,6 +5,16 @@ const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
+// Type guard to check if error has a message property
+function isErrorWithMessage(error: unknown): error is { message: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message: unknown }).message === 'string'
+  );
+}
+
 export async function POST(req: NextRequest) {
   console.log('=== TTS API Route Called ===');
   console.log('Timestamp:', new Date().toISOString());
@@ -55,6 +65,9 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
+    // Handle ElevenLabs API errors using type guard
+    if (isErrorWithMessage(error)) {
+      console.error('ElevenLabs API Error:', error.message);
     // Handle ElevenLabs API errors
     if (error && typeof error === 'object' && 'message' in error) {
       const errorMessage = typeof error.message === 'string' ? error.message : String(error.message);
@@ -100,11 +113,11 @@ async function generateSpeech(
   voiceSettings: any
 ) {
   console.log('Making ElevenLabs TTS API call...');
-  console.log('Voice ID:', voiceId || 'JBFqnCBsd6RMkjVDRZzb');
+  console.log('Voice ID:', voiceId || '54aMY52sJqjoIoZwarYW');
   console.log('Text length:', text.length);
 
   const audio = await elevenlabs.textToSpeech.convert(
-    voiceId || 'JBFqnCBsd6RMkjVDRZzb', // Default voice ID
+    voiceId || '54aMY52sJqjoIoZwarYW', // Default voice ID
     {
       text: text,
       modelId: 'eleven_multilingual_v2',
