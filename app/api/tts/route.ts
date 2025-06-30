@@ -193,7 +193,7 @@ export async function GET(req: NextRequest) {
       
       return NextResponse.json({
         voices: voices.voices.map(voice => ({
-          voice_id: voice.voice_id,
+          voice_id: voice.voiceId,
           name: voice.name,
           category: voice.category,
           description: voice.description,
