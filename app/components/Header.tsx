@@ -1,54 +1,40 @@
 'use client'
 
-import React from 'react'
+import Link from 'next/link'
 import { Globe } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { translations } from '../data/mockData'
+import AuthMenu from './AuthMenu'
 
-const Header: React.FC = () => {
+function Header() {
   const { language, setLanguage } = useAppStore()
-
-  const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'sw' : 'en')
-  }
-
   const t = translations[language]
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-primary-100">
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-primary-500 to-coral-500 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-lg lg:text-xl">M</span>
+    <header className="sticky top-0 z-40 border-b border-zinc-200/60 bg-white/75 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 lg:px-8">
+        <Link href="/" className="flex items-center gap-3 min-w-0 group">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/25 ring-2 ring-white">
+            <span className="text-lg font-bold tracking-tight">M</span>
           </div>
-          <div>
-            <span className="font-bold text-xl lg:text-2xl text-primary-900">Materna AI</span>
-            <div className="hidden lg:block text-sm text-primary-600">Your Trusted Voice in Motherhood</div>
+          <div className="min-w-0 text-left">
+            <span className="block truncate text-lg font-semibold tracking-tight text-zinc-900 group-hover:text-violet-700 transition-colors">
+              Materna
+            </span>
+            <span className="hidden text-xs text-zinc-500 sm:block truncate">{t.tagline}</span>
           </div>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          {/* Desktop Stats */}
-          <div className="hidden xl:flex items-center space-x-6 text-sm">
-            <div className="text-center">
-              <div className="font-bold text-primary-600">10k+</div>
-              <div className="text-primary-500">Mothers</div>
-            </div>
-            <div className="text-center">
-              <div className="font-bold text-coral-600">24/7</div>
-              <div className="text-coral-500">Support</div>
-            </div>
-          </div>
-          
+        </Link>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <AuthMenu />
           <button
-            onClick={toggleLanguage}
-            className="flex items-center space-x-2 px-3 py-2 lg:px-4 lg:py-2 rounded-full bg-primary-100 hover:bg-primary-200 transition-colors"
+            type="button"
+            onClick={() => setLanguage(language === 'en' ? 'sw' : 'en')}
+            className="flex shrink-0 items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-700 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 transition-colors"
             aria-label="Toggle language"
           >
-            <Globe className="w-4 h-4 text-primary-600" />
-            <span className="text-sm font-medium text-primary-700 uppercase">
-              {language}
-            </span>
+            <Globe className="h-3.5 w-3.5 text-violet-600" />
+            {language}
           </button>
         </div>
       </div>

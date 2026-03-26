@@ -1,184 +1,161 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Calendar, Baby, Share, Download, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import { Calendar, Baby, Share, TrendingUp } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { pregnancyMilestones } from '../data/mockData'
 import Card from './Card'
 import Button from './Button'
-import PrimeBadge from './PrimeBadge'
 import Layout from './Layout'
 
-const TrackerPage: React.FC = () => {
-  const { pregnancyData, setPregnancyData, isPrime } = useAppStore()
+function TrackerPage() {
+  const { pregnancyData, setPregnancyData } = useAppStore()
   const [conceptionDate, setConceptionDate] = useState(
-    pregnancyData.dueDate ? 
-      new Date(pregnancyData.dueDate.getTime() - (266 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0] : ''
+    pregnancyData.dueDate
+      ? new Date(pregnancyData.dueDate.getTime() - 266 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0]
+      : ''
   )
 
-  const calculateWeekFromConception = (conceptionDate: Date) => {
-    // Get today's date at midnight local time for consistent calculation
+  const calculateWeekFromConception = (conceptionDateInput: Date) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
-    // Ensure conception date is also at midnight for consistent comparison
-    const normalizedConceptionDate = new Date(conceptionDate)
+
+    const normalizedConceptionDate = new Date(conceptionDateInput)
     normalizedConceptionDate.setHours(0, 0, 0, 0)
-    
-    // Validate that conception date is reasonable (not in future, not more than 42 weeks ago)
-    const maxPastDate = new Date(today.getTime() - (294 * 24 * 60 * 60 * 1000)) // 42 weeks ago
-    const tomorrow = new Date(today.getTime() + (24 * 60 * 60 * 1000))
-    
+
+    const maxPastDate = new Date(today.getTime() - 294 * 24 * 60 * 60 * 1000)
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
+
     if (normalizedConceptionDate > tomorrow || normalizedConceptionDate < maxPastDate) {
-      return 0 // Invalid date range
+      return 0
     }
-    
-    // Calculate weeks since conception
+
     const timeSinceConception = today.getTime() - normalizedConceptionDate.getTime()
     const daysSinceConception = timeSinceConception / (1000 * 60 * 60 * 24)
     const weeksSinceConception = Math.round(daysSinceConception / 7)
-    
-    // Medical pregnancy weeks start from LMP, which is typically 2 weeks before conception
-    // So we add 2 weeks to weeks since conception
     const pregnancyWeek = weeksSinceConception + 2
-    
-    // Ensure we're within reasonable pregnancy bounds (2-44 weeks)
-    const currentWeek = Math.max(0, Math.min(44, pregnancyWeek))
-    
-    return currentWeek
+    return Math.max(0, Math.min(44, pregnancyWeek))
   }
 
   const handleConceptionDateChange = (date: string) => {
     setConceptionDate(date)
     if (date) {
-      // Parse date in local timezone to avoid timezone shift issues
       const [year, month, day] = date.split('-').map(Number)
-      const conception = new Date(year, month - 1, day) // month is 0-indexed
+      const conception = new Date(year, month - 1, day)
       const week = calculateWeekFromConception(conception)
-      
-      // Calculate due date (266 days after conception, which is 280 days from LMP)
-      const dueDate = new Date(conception.getTime() + (266 * 24 * 60 * 60 * 1000))
-      
-      const milestone = pregnancyMilestones[week as keyof typeof pregnancyMilestones]
-      
+      const dueDate = new Date(conception.getTime() + 266 * 24 * 60 * 60 * 1000)
+      const milestone = pregnancyMilestones[week]
+
       setPregnancyData({
-        dueDate: dueDate,
+        dueDate,
         currentWeek: week,
-        babySize: milestone?.babySize || 'grape',
-        milestone: milestone?.milestone || 'Your pregnancy journey begins!'
+        babySize: milestone?.babySize || '—',
+        milestone: milestone?.milestone || 'Your pregnancy journey continues.',
       })
     }
   }
 
   const shareToWhatsApp = () => {
-    const message = `🤱 Week ${pregnancyData.currentWeek} Update: ${pregnancyData.milestone}`
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`
-    window.open(url, '_blank')
+    const message = `Week ${pregnancyData.currentWeek} — ${pregnancyData.milestone}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank')
   }
 
   return (
     <Layout>
-      <div className="space-y-6 lg:space-y-8">
-        <div className="text-center py-4 lg:py-8">
-          <h1 className="text-2xl lg:text-4xl font-bold text-primary-900 mb-2">Pregnancy Tracker</h1>
-          <p className="text-primary-600 lg:text-lg">Track your journey week by week</p>
+      <div className="space-y-10 lg:space-y-12">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600">Tracker</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+            Your pregnancy timeline
+          </h1>
+          <p className="mt-3 text-zinc-600 leading-relaxed">
+            Set your conception date to see week, due date, and milestones — clear and private on this device.
+          </p>
         </div>
 
-        <div className="lg:grid lg:grid-cols-3 lg:gap-8 space-y-6 lg:space-y-0">
-          {/* Conception Date Input */}
+        <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
           <div className="lg:col-span-1">
             <Card>
-              <div className="p-6 lg:p-8 space-y-4">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Calendar className="w-6 h-6 text-primary-500" />
-                  <span className="font-semibold text-primary-900 lg:text-lg">Conception Date</span>
+              <div className="space-y-4 p-6 sm:p-8">
+                <div className="flex items-center gap-2 text-zinc-900">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <span className="font-semibold">Conception date</span>
                 </div>
                 <input
                   type="date"
                   value={conceptionDate}
                   onChange={(e) => handleConceptionDateChange(e.target.value)}
-                  className="w-full p-4 border border-primary-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent lg:text-lg"
-                  min={new Date(Date.now() - (294 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]} // Up to 42 weeks ago
-                  max={new Date().toISOString().split('T')[0]} // Today
+                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 shadow-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20"
+                  min={new Date(Date.now() - 294 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                  max={new Date().toISOString().split('T')[0]}
                 />
-                
+
                 {conceptionDate && pregnancyData.currentWeek === 0 && (
-                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                      Please enter when you conceived - this should be in the past, up to 10 months ago.
-                    </p>
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    Choose a conception date in the past (within the last ~10 months).
                   </div>
                 )}
-                
+
                 {pregnancyData.currentWeek > 0 && (
-                  <div className="pt-4 border-t border-primary-100">
-                    <div className="text-center space-y-3">
-                      <div className="text-sm text-primary-600">
-                        <strong>Due Date:</strong> {pregnancyData.dueDate?.toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
+                  <div className="space-y-3 border-t border-zinc-100 pt-4">
+                    <p className="text-sm text-zinc-600">
+                      <span className="font-medium text-zinc-800">Due date · </span>
+                      {pregnancyData.dueDate?.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </p>
+                    {pregnancyData.currentWeek >= 40 ? (
+                      <div>
+                        <p className="text-2xl font-semibold text-violet-700">
+                          {pregnancyData.currentWeek > 40
+                            ? `${pregnancyData.currentWeek - 40} week${pregnancyData.currentWeek - 40 !== 1 ? 's' : ''} past due`
+                            : 'Due window'}
+                        </p>
+                        <p className="text-sm text-zinc-500">Stay in touch with your care team.</p>
                       </div>
-                      {pregnancyData.currentWeek >= 40 ? (
-                        <div>
-                          <div className="text-2xl font-bold text-coral-600 mb-1">
-                            {pregnancyData.currentWeek > 40 ? `${pregnancyData.currentWeek - 40} week${pregnancyData.currentWeek - 40 !== 1 ? 's' : ''}` : 'Due'} 
-                          </div>
-                          <div className="text-sm text-coral-500">
-                            {pregnancyData.currentWeek > 40 ? 'past due date' : 'date arrived!'}
-                          </div>
-                        </div>
-                      ) : pregnancyData.currentWeek >= 37 ? (
-                        <div>
-                          <div className="text-2xl font-bold text-green-600 mb-1">
-                            Full Term
-                          </div>
-                          <div className="text-sm text-green-500">
-                            Baby can safely arrive anytime
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="text-3xl font-bold text-primary-600 mb-1">
-                            {Math.max(0, 40 - pregnancyData.currentWeek)}
-                          </div>
-                          <div className="text-sm text-primary-500">
-                            weeks until due date
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    ) : pregnancyData.currentWeek >= 37 ? (
+                      <div>
+                        <p className="text-2xl font-semibold text-emerald-700">Full term</p>
+                        <p className="text-sm text-zinc-500">Baby can arrive safely anytime.</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-3xl font-semibold tracking-tight text-zinc-900">
+                          {Math.max(0, 40 - pregnancyData.currentWeek)}
+                        </p>
+                        <p className="text-sm text-zinc-500">weeks until due date (est.)</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </Card>
           </div>
 
-          {/* Current Week Display */}
           <div className="lg:col-span-2">
             {pregnancyData.currentWeek > 0 && (
-              <Card className="bg-gradient-to-r from-primary-50 to-coral-50 h-full">
-                <div className="p-6 lg:p-8 text-center lg:flex lg:items-center lg:text-left lg:space-x-8">
-                  <div className="flex-1">
-                    <div className="text-4xl lg:text-6xl font-bold text-primary-600 mb-4">
-                      Week {pregnancyData.currentWeek}
-                    </div>
-                    <div className="flex items-center justify-center lg:justify-start space-x-3 mb-4">
-                      <Baby className="w-6 h-6 text-coral-500" />
-                      <span className="text-coral-600 font-medium lg:text-lg">
-                        Size of a {pregnancyData.babySize}
-                      </span>
-                    </div>
-                    <p className="text-primary-700 text-lg lg:text-xl leading-relaxed">
-                      {pregnancyData.milestone}
+              <Card className="h-full overflow-hidden border-violet-100/80 bg-gradient-to-br from-white via-violet-50/40 to-fuchsia-50/30">
+                <div className="p-6 sm:p-8 lg:flex lg:items-center lg:gap-10">
+                  <div className="flex-1 text-center lg:text-left">
+                    <p className="text-sm font-medium uppercase tracking-wider text-violet-600">This week</p>
+                    <p className="mt-1 text-5xl font-semibold tracking-tight text-zinc-900 sm:text-6xl">
+                      {pregnancyData.currentWeek}
                     </p>
-                  </div>
-                  <div className="hidden lg:block">
-                    <div className="w-32 h-32 bg-gradient-to-r from-coral-500 to-pink-500 rounded-full flex items-center justify-center">
-                      <Baby className="w-16 h-16 text-white" />
+                    <div className="mt-4 flex items-center justify-center gap-2 text-zinc-700 lg:justify-start">
+                      <Baby className="h-5 w-5 text-violet-600" />
+                      <span className="font-medium">About the size of a {pregnancyData.babySize}</span>
                     </div>
+                    <p className="mt-4 text-lg leading-relaxed text-zinc-600">{pregnancyData.milestone}</p>
+                  </div>
+                  <div className="mx-auto mt-8 flex h-36 w-36 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-xl shadow-violet-500/30 lg:mt-0 lg:h-40 lg:w-40">
+                    <Baby className="h-16 w-16 text-white opacity-95" />
                   </div>
                 </div>
               </Card>
@@ -186,44 +163,42 @@ const TrackerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Progress Timeline */}
         {pregnancyData.currentWeek > 0 && (
-          <div className="lg:grid lg:grid-cols-2 lg:gap-8 space-y-6 lg:space-y-0">
+          <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
             <Card>
-              <div className="p-6 lg:p-8">
-                <h3 className="font-semibold text-primary-900 mb-6 lg:text-lg flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  Your Progress
+              <div className="p-6 sm:p-8">
+                <h3 className="mb-6 flex items-center gap-2 font-semibold text-zinc-900">
+                  <TrendingUp className="h-5 w-5 text-violet-600" />
+                  Progress
                 </h3>
-                <div className="relative">
-                  <div className="absolute left-4 top-0 bottom-0 w-1 bg-primary-200 rounded-full"></div>
-                  <div 
-                    className="absolute left-4 top-0 w-1 bg-primary-500 transition-all duration-1000 rounded-full"
-                    style={{ height: `${(pregnancyData.currentWeek / 40) * 100}%` }}
-                  ></div>
-                  
+                <div className="relative pl-2">
+                  <div className="absolute bottom-2 left-[1.15rem] top-2 w-px rounded-full bg-zinc-200" />
+                  <div
+                    className="absolute left-[1.15rem] top-2 w-px rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-500 transition-all duration-700"
+                    style={{ height: `${Math.min(100, (pregnancyData.currentWeek / 40) * 100)}%` }}
+                  />
                   {[12, 24, 36, 40].map((week) => (
-                    <div key={week} className="relative flex items-center mb-6 last:mb-0">
-                      <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center border-2 z-10 ${
-                        pregnancyData.currentWeek >= week 
-                          ? 'bg-primary-500 border-primary-500 text-white' 
-                          : 'bg-white border-primary-200 text-primary-500'
-                      }`}>
-                        <span className="text-sm lg:text-base font-bold">{week}</span>
+                    <div key={week} className="relative mb-6 flex items-center last:mb-0">
+                      <div
+                        className={`z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                          pregnancyData.currentWeek >= week
+                            ? 'bg-zinc-900 text-white'
+                            : 'border-2 border-zinc-200 bg-white text-zinc-400'
+                        }`}
+                      >
+                        {week}
                       </div>
-                      <div className="ml-4 lg:ml-6">
-                        <div className="font-medium text-primary-900 lg:text-lg">
-                          {week === 12 && 'End of First Trimester'}
-                          {week === 24 && 'Halfway Point'}
-                          {week === 36 && 'Full Term Soon'}
-                          {week === 40 && (pregnancyData.dueDate ? 
-                            `Due Date: ${pregnancyData.dueDate.toLocaleDateString()}` : 
-                            'Due Date'
-                          )}
-                        </div>
-                        <div className="text-sm text-primary-600">
-                          Week {week}
-                        </div>
+                      <div className="ml-4">
+                        <p className="font-medium text-zinc-900">
+                          {week === 12 && 'End of first trimester'}
+                          {week === 24 && 'Halfway'}
+                          {week === 36 && 'Almost full term'}
+                          {week === 40 &&
+                            (pregnancyData.dueDate
+                              ? `Due ${pregnancyData.dueDate.toLocaleDateString()}`
+                              : 'Due date')}
+                        </p>
+                        <p className="text-sm text-zinc-500">Week {week}</p>
                       </div>
                     </div>
                   ))}
@@ -231,53 +206,34 @@ const TrackerPage: React.FC = () => {
               </div>
             </Card>
 
-            {/* Health Checklist */}
             <Card>
-              <div className="p-6 lg:p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-semibold text-primary-900 lg:text-lg">This Week's Checklist</h3>
-                </div>
-                <div className="space-y-4">
-                  <label className="flex items-center space-x-3 p-3 rounded-lg hover:bg-primary-25 transition-colors">
-                    <input type="checkbox" className="rounded border-primary-300 text-primary-500 focus:ring-primary-500 w-5 h-5" />
-                    <span className="text-primary-700 lg:text-lg">Take prenatal vitamins</span>
-                  </label>
-                  <label className="flex items-center space-x-3 p-3 rounded-lg hover:bg-primary-25 transition-colors">
-                    <input type="checkbox" className="rounded border-primary-300 text-primary-500 focus:ring-primary-500 w-5 h-5" />
-                    <span className="text-primary-700 lg:text-lg">Stay hydrated (8-10 glasses)</span>
-                  </label>
-                  <label className="flex items-center space-x-3 p-3 rounded-lg hover:bg-primary-25 transition-colors">
-                    <input type="checkbox" className="rounded border-primary-300 text-primary-500 focus:ring-primary-500 w-5 h-5" />
-                    <span className="text-primary-700 lg:text-lg">Gentle exercise (20-30 minutes)</span>
-                  </label>
-                  <label className="flex items-center justify-between space-x-3 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                    <div className="flex items-center space-x-3">
-                      <input type="checkbox" className="rounded border-primary-300 text-primary-500 focus:ring-primary-500 w-5 h-5" disabled />
-                      <span className="text-primary-700 lg:text-lg">Nutrition meal planning</span>
-                    </div>
-                    <PrimeBadge />
-                  </label>
-                </div>
+              <div className="p-6 sm:p-8">
+                <h3 className="mb-6 font-semibold text-zinc-900">This week</h3>
+                <ul className="space-y-3">
+                  {[
+                    'Take prenatal vitamins as directed',
+                    'Stay hydrated',
+                    'Gentle movement most days',
+                    'Rest when you need it',
+                  ].map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-700"
+                    >
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-500" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </Card>
           </div>
         )}
 
-        {/* Action Buttons */}
         {pregnancyData.currentWeek > 0 && (
-          <div className="flex flex-col sm:flex-row gap-4 lg:justify-center">
-            <Button variant="outline" onClick={shareToWhatsApp} icon={Share} className="lg:px-8">
-              Share Update
-            </Button>
-            <Button 
-              variant="outline" 
-              icon={Download} 
-              className="opacity-75 lg:px-8" 
-              disabled={!isPrime}
-            >
-              <span className="flex items-center">
-                PDF Report <PrimeBadge className="ml-2" />
-              </span>
+          <div className="flex justify-start">
+            <Button variant="outline" onClick={shareToWhatsApp} icon={Share}>
+              Share update
             </Button>
           </div>
         )}

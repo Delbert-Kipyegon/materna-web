@@ -1,20 +1,16 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
-import Script from 'next/script'
 
-const inter = Inter({ subsets: ['latin'] })
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'Materna AI - Your Trusted Voice in Motherhood',
-  description: 'Professional maternal health assistant offering voice-first AI support, pregnancy tracking, and personalized care for expectant mothers.',
-  keywords: 'pregnancy, maternal health, AI assistant, pregnancy tracker, prenatal care',
-  authors: [{ name: 'Materna AI Team' }],
-  openGraph: {
-    title: 'Materna AI - Your Trusted Voice in Motherhood',
-    description: 'Professional maternal health assistant offering voice-first AI support, pregnancy tracking, and personalized care for expectant mothers.',
-    type: 'website',
-  },
+  title: 'Materna — Tracker & video care',
+  description: 'Pregnancy tracking and secure video visits with your maternal health team.',
 }
 
 export default function RootLayout({
@@ -23,14 +19,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <Script 
-          src="https://unpkg.com/@daily-co/daily-js@0.55.0/dist/daily-js.js"
-          strategy="beforeInteractive"
-        />
-        {children}
-      </body>
+    <html lang="en" className={plusJakarta.variable}>
+      <body className={`${plusJakarta.className} font-sans antialiased`}>{children}</body>
     </html>
   )
 }

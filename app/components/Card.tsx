@@ -4,20 +4,17 @@ interface CardProps {
   children: React.ReactNode
   className?: string
   onClick?: () => void
-  isPrime?: boolean
 }
 
-const Card: React.FC<CardProps> = ({ children, className = '', onClick, isPrime }) => {
-  const baseClasses = `
-    bg-white rounded-2xl shadow-sm border border-primary-100 
-    transition-all duration-200 hover:shadow-md hover:border-primary-200
-    ${onClick ? 'cursor-pointer hover:scale-[1.02]' : ''}
-    ${isPrime ? 'ring-2 ring-yellow-400/20' : ''}
+function Card({ children, className = '', onClick }: CardProps) {
+  const base = `
+    rounded-2xl border border-zinc-200/80 bg-white shadow-sm shadow-zinc-900/[0.04]
+    transition-all duration-200
+    ${onClick ? 'cursor-pointer hover:border-zinc-300 hover:shadow-md' : ''}
     ${className}
   `
-
   return (
-    <div className={baseClasses} onClick={onClick}>
+    <div className={base.trim()} onClick={onClick}>
       {children}
     </div>
   )

@@ -1,13 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  env: {
-    TAVUS_API_KEY: process.env.VITE_TAVUS_API_KEY,
-    TAVUS_REPLICA_ID: process.env.VITE_TAVUS_REPLICA_ID,
-    OPENAI_API_KEY: process.env.VITE_OPENAI_API_KEY,
-    ELEVENLABS_API_KEY: process.env.VITE_ELEVENLABS_API_KEY,
-  },
   images: {
     domains: ['images.pexels.com'],
+  },
+  async redirects() {
+    return [
+      { source: '/ask', destination: '/video', permanent: false },
+      { source: '/ask/video', destination: '/video', permanent: false },
+      { source: '/ask/chat', destination: '/', permanent: false },
+      { source: '/affirmations', destination: '/', permanent: false },
+      { source: '/tips', destination: '/', permanent: false },
+      { source: '/prime', destination: '/', permanent: false },
+      { source: '/notes', destination: '/', permanent: false },
+    ]
   },
 }
 

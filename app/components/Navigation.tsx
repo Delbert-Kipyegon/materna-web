@@ -1,68 +1,64 @@
 'use client'
 
-import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, MessageCircle, Calendar, Lightbulb, Sparkles, Crown, BookOpen } from 'lucide-react'
+import { Home, Calendar, Video, UserCircle } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { translations } from '../data/mockData'
 
-const Navigation: React.FC = () => {
+function Navigation() {
   const { language } = useAppStore()
   const pathname = usePathname()
   const t = translations[language]
 
   const navItems = [
     { href: '/', icon: Home, label: t.home },
-    { href: '/ask', icon: MessageCircle, label: t.ask },
     { href: '/tracker', icon: Calendar, label: t.tracker },
-    { href: '/tips', icon: Lightbulb, label: t.tips },
-    { href: '/affirmations', icon: Sparkles, label: t.affirmations },
-    { href: '/prime', icon: Crown, label: t.prime },
-    { href: '/notes', icon: BookOpen, label: t.notes },
+    { href: '/video', icon: Video, label: t.video },
+    { href: '/profile', icon: UserCircle, label: t.profile },
   ]
 
   return (
     <>
-      {/* Desktop Sidebar Navigation */}
-      <nav className="hidden lg:block bg-white rounded-2xl shadow-sm border border-primary-100 p-6">
-        <div className="space-y-2">
-          {navItems.map(({ href, icon: Icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 ${
-                pathname === href
-                  ? 'text-primary-600 bg-primary-50 shadow-sm border border-primary-200'
-                  : 'text-gray-600 hover:text-primary-600 hover:bg-primary-25'
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="font-medium">{label}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-primary-100 z-50">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-around py-2">
-            {navItems.map(({ href, icon: Icon, label }) => (
+      <nav className="hidden lg:block rounded-2xl border border-zinc-200/80 bg-white/80 p-3 shadow-sm shadow-zinc-900/[0.04] backdrop-blur-xl">
+        <div className="space-y-1">
+          {navItems.map(({ href, icon: Icon, label }) => {
+            const active = pathname === href
+            return (
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors ${
-                  pathname === href
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-500 hover:text-primary-500 hover:bg-primary-25'
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                  active
+                    ? 'bg-zinc-900 text-white shadow-md'
+                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-xs font-medium">{label}</span>
+                <Icon className="h-[18px] w-[18px] shrink-0 opacity-90" />
+                <span>{label}</span>
               </Link>
-            ))}
-          </div>
+            )
+          })}
+        </div>
+      </nav>
+
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-200/80 bg-white/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto flex max-w-md items-stretch justify-around px-2 py-2">
+          {navItems.map(({ href, icon: Icon, label }) => {
+            const active = pathname === href
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
+                  active ? 'text-violet-600' : 'text-zinc-500'
+                }`}
+              >
+                <Icon className={`h-5 w-5 ${active ? 'text-violet-600' : ''}`} />
+                {label}
+              </Link>
+            )
+          })}
         </div>
       </nav>
     </>
